@@ -1,0 +1,16 @@
+<title>文字传瑜助手</title><meta charset=utf-8><script src=src/fileStore.js></script>
+<div style=height:100%;display:flex;flex-flow:column><div><span style=float:right><input id=提交
+    onclick="if(名称.value){if(this.value!=='保存'||文字.value){window[this.value](名称.value,文字.value).then(显示结果)}}else{展示()}" type=submit value=打开></span>
+<span style=display:block;overflow:hidden>
+  <input id=名称 style=width:100%>
+</span></div><textarea style=width:100%;flex-grow:1;resize:none id=文字 oninput="提交.value=this.value?'保存':'打开'"></textarea></div>
+<script>window.打开=打开;window.保存=保存;window.删除=删除
+显示结果=结果=>{文字.value=结果;if(结果){提交.value='保存'}}
+展示=()=>查询().then(结果=>{列表.style.display='block';列表.innerHTML='已保存<span onclick="列表.innerHTML=\'\';列表.style.display=\'none\'">✖️</span>'
+  for(const 项目 of 结果){
+    列表.insertAdjacentHTML('beforeend',
+    `<li><span onclick="打开('${项目}').then(显示结果);名称.value='${项目}';列表.innerHTML='';列表.style.display='none'">${项目}</span><span onclick="删除('${项目}');列表.innerHTML='';列表.style.display='none';展示()">⛔</span></li>`)
+  }})
+</script>
+<div style="padding:10;display:none;position:fixed;left:10%;right:10%;top:10%;bottom:10%;background:#fffc;overflow:auto;border:solid 1px lightgrey;border-radius:3%" id=列表>
+</div>

@@ -1,0 +1,138 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><title>小程序</title>
+<input id=id oninput=validate(event) onkeypress=validateKey(event) maxlength=18 size=18 placeholder=身份证号 />
+<span id=result></span>
+<script>
+  w = [ 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 ];
+  function validate(e){
+    s=e.target.value
+    var changed
+                  for (let i = 0; i < s.length; i++)
+                      if ((s[i] > '9' || s[i] < '0') && s[i]!='x'&&s[i]!='X')
+                      {
+                          s=s.replace(s[i],'')
+                          changed=true
+                          i--
+                      }
+    if(changed)e.target.value=s
+    res=document.getElementById('result')
+              if (s.length == 17 || s.length == 18)
+              {
+                  for (let i = 0; i < 17; i++)
+                      if (s[i] > '9' || s[i] < '0')
+                      {
+                          res.innerHTML = "输入有误";
+                          return;
+                      }
+                  sum = 0;
+                  for (let i = 0; i < 17; i++)
+                      sum += (s[i].charCodeAt(0)-'0'.charCodeAt(0)) * w[i];
+                  sum %= 11;
+                  switch (sum)
+                  {
+                      case 0: ans = 49; break;
+                      case 1: ans = 48; break;
+                      case 2: ans = 'X'.charCodeAt(0); break;
+                      default: ans = 60 - sum; break;
+                  }
+                  if (s.length == 17)
+                  {
+                      res.style.color = 'black';
+                      res.innerHTML = "校验码是" + String.fromCharCode(ans);
+                  }
+                  else if (s[17].charCodeAt(0) == ans||s[17]=='x'&&ans=='X'.charCodeAt(0))
+                  {
+                      res.innerHTML = "✔️校验正确";
+                      res.style.color = 'green';
+                  }
+                  else
+                  {
+                      res.innerHTML = "❌校验错误";
+                      res.style.color = 'red';
+                  }
+              }
+              else res.innerHTML = "   ";
+  }
+  function validateKey(e){
+              if (!(e.keyCode >= '0'.charCodeAt(0) && e.keyCode <= '9'.charCodeAt(0)||e.keyCode=='X'.charCodeAt(0)||e.keyCode=='x'.charCodeAt(0)||e.keyCode==8))
+              {
+                  return e.returnValue = false;
+              }
+  }
+</script>
+<hr>
+<div style="display:grid;grid-template-columns:50% 25% 25%;width:100%">
+<textarea placeholder=标记语言／矢量图形 oninput=putSvg(event)></textarea>
+<div id=img></div>
+<img>
+</div>
+<script>
+svgArea=document.getElementById('img')
+image=document.getElementsByTagName('img')[0]
+function putSvg(inputEv){
+  svgArea.innerHTML=inputEv.target.value
+  svgElement=svgArea.getElementsByTagName('svg')[0]
+  if(!svgElement){
+    image.setAttribute('src','')
+    image.style.display='none';
+    image.parentNode.style['grid-template-columns']='50% 50%'
+    return
+  }
+  image.style={}
+  image.parentNode.style['grid-template-columns']='50% 25% 25%'
+  svg = new XMLSerializer().serializeToString(svgElement);
+  base64 = btoa( svg );
+  image.setAttribute( 'src', 'data:image/svg+xml;base64,' + base64 );
+}
+</script>
+<hr>
+<input id=i style=width:100%;height:50px;font-size:xxx-large placeholder=颜色值 />
+<script>
+function fwcToHwc(text){
+  let ret=text.replaceAll('　',' ')
+  for(let strIdx=0;strIdx<ret.length;strIdx++){
+    if(ret.charCodeAt(strIdx)>65280&&ret.charCodeAt(strIdx)<65375){
+      ret=ret.replace(ret[strIdx],String.fromCharCode(ret.charCodeAt(strIdx)-65248))
+    }
+  }
+  return ret
+}
+</script>
+<script>document.getElementById('i').addEventListener('input',e=>{document.getElementsByTagName('body')[0].setAttribute('style',`background:#${fwcToHwc(e.target.value)}`)})</script>
+<hr>
+<input id=ask /><input id=submit type=submit onClick=getAnswer() />
+<span id=answer></span>
+<script>
+function getAIAnswer(prompt,responseCallback){
+const apiKey = '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';
+const model = 'text-davinci-002';
+
+const url = 'https://api.openai.com/v1/engines/'+model+'/completions';
+
+const requestOptions = {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + apiKey,
+  },
+  body: JSON.stringify({
+    prompt: prompt,
+    max_tokens: 1024,
+    n: 1,
+    temperature: 0.5,
+  })
+};
+
+fetch(url, requestOptions)
+  .then(response => response.json())
+  .then(data => responseCallback(data))
+  .catch(error => console.error(error));
+}
+</script>
+<script>
+function getAnswer(){
+  getAIAnswer(document.getElementById('ask').value,function(text){document.getElementById('answer').innerHTML=text.choices[0].text})
+}
+</script>
+<script>
+document.getElementById('ask').addEventListener("keyup",event=>{if(event.keyCode==13)document.getElementById('submit').click()});
+</script>
