@@ -1,0 +1,17 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src=src/sunMoonCalc.js></script>
+<script src=src/chnCalendar.js></script>
+<script>
+setTimeout(function(){
+
+document.title=now.toLocaleDateString(undefined,{year:'numeric'})
+
+page=document.getElementsByTagName('body')[0]
+page.innerHTML=`${now.getFullYear()}年节气时间：`;
+page.innerHTML+=htmlSolarTerms
+
+page.innerHTML+=`<br>${now.getFullYear()}年月球朔时间：`;
+page.innerHTML+=htmlMoons
+
+},1)
+</script>
