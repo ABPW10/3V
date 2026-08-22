@@ -1,3 +1,0 @@
-const 打开=名称=>打开或保存(名称),保存=(名称,内容)=>打开或保存(名称,'保存',内容),删除=名称=>打开或保存(名称,'删除')
-打开或保存=(名称,用法='打开',内容=undefined)=>new Promise((完成,中止)=>{fetch('http://vwwv.royalwebhosting.net/php/fs.php?id='+名称,{method:用法!=='打开'?({打开:'GET',保存:'POST',删除:'DELETE'})[用法]:undefined,body:用法==='保存'?内容:undefined}).then(流量=>流量.text()).then(结果=>完成(结果))})
-查询=()=>new Promise((完成,中断)=>{fetch('http://vwwv.royalwebhosting.net/php/fs.php').then(流量=>流量.json()).then(结果=>完成(结果))})
