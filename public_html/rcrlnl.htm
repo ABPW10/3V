@@ -1,0 +1,237 @@
+
+<title>日出日落年历</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<select id=locList>
+</select>
+<span id=lng></span>　<span id=lat></span>　<span id=tz></span><br>
+<style type="text/css">
+.table  {border-collapse:collapse;border-spacing:0;}
+.table td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:0px 0px;word-break:normal;}
+.table th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:0px 0px;word-break:normal;}
+.table .tHead{border-color:inherit;font-family:Arial, Times, serif !important;font-size:100%;position:-webkit-sticky;
+  position:sticky;text-align:center;top:-1px;vertical-align:middle;will-change:transform;}
+.table .tCell{border-color:inherit;font-family:Arial, Times, serif !important;font-size:100%;text-align:center;
+  vertical-align:middle}
+.today{background:lightgreen}
+</style>
+<table class="table">
+<thead>
+  <tr id=tableHead>
+    <th class="tHead">日期</th>
+    <th class="tHead">天文曙光</th>
+    <th class="tHead">航海曙光</th>
+    <th class="tHead">可视曙光</th>
+    <th class="tHead">日出</th>
+    <th class="tHead">日出方位</th>
+    <th class="tHead">正午</th>
+    <th class="tHead">日落</th>
+    <th class="tHead">日落方位</th>
+    <th class="tHead">昼长</th>
+    <th class="tHead">可视暮光</th>
+    <th class="tHead">航海暮光</th>
+    <th class="tHead">天文暮光</th>
+  </tr>
+</thead>
+<tbody id=tableMain>
+</tbody>
+</table>
+<script>
+    now=new Date;
+
+    function tzOfDay(day){
+        return day>new Date(new Date(day).setMonth(2,14-(new Date(new Date(day).setMonth(2,0)).getDay()+1)))-(-1/24*86400000)&&day<new Date(new Date(day).setMonth(10,7-(new Date(new Date(day).setMonth(10,0)).getDay()+1)))-(-1/24*86400000)?-4:-5;
+    }
+</script>
+<script>
+  locations=[
+    {t:'马萨诸塞琳市',ln:'-70°56\'58"',la:'42°28\'00"'},
+    {t:'马萨诸塞洛维尔',ln:'-71°18\'58"',la:'42°38\'00"'},
+    {t:'波士顿',ln:-71.0580736,la:42.3604255},
+    {t:'马萨诸塞新埠港',ln:-70.866,la:42.8},
+    {t:'美國華盛頓',ln:-77.0369,la:38.9072},
+    {t:'合肥',ln:117,la:32,tz:+8},
+    {t:'海口',ln:110.3,la:20,tz:+8},
+    {t:'北京',ln:116,la:40,tz:+8}
+  ];
+  locList=document.getElementById('locList');
+  locations.forEach(location => {
+    option=document.createElement('option');
+    option.innerHTML=location.t;
+    locList.appendChild(option);
+  });
+  option=document.createElement('option');
+  option.innerHTML='自选';
+  locList.appendChild(option);
+  lng=document.getElementById('lng');
+  lat=document.getElementById('lat');
+  tz=document.getElementById('tz');
+  lng.innerHTML=locations[0].ln;
+  lat.innerHTML=locations[0].la;
+  tzVal=locations[0].tz??tzOfDay(now);
+  tz.innerHTML=(tzVal>0?'+':'')+tzVal;
+  lngElement=lng;
+  latElement=lat;
+  tzElement=tz;
+  locList.addEventListener('change', function(){
+      if(locList.options[locList.selectedIndex].text==='自选'){
+        lngElement.innerHTML='<input placeholder=经度 style=width:10em />';
+        lngElement.onchange=updateTable;
+        latElement.innerHTML='<input placeholder=纬度 style=width:10em />';
+        latElement.onchange=updateTable;
+        tzElement.innerHTML='<input placeholder=时区 style=width:5em />';
+        tzElement.onchange=updateTable;
+      }else{
+        lngElement.innerHTML=locations[locList.selectedIndex].ln;
+        latElement.innerHTML=locations[locList.selectedIndex].la;
+        tzVal=locations[locList.selectedIndex].ln&&locations[locList.selectedIndex].la?locations[locList.selectedIndex].tz??tzOfDay(now):undefined;
+        tzElement.innerHTML=(tzVal>0?'+':'')+tzVal;
+      }
+      updateTable();
+  }, false);
+</script>
+<script>
+    function sunlights(equationOfTime,sunLat,tz){
+        hTZ=parseFloat(tz);
+        lngEastOfTZ=(lngVal-15*hTZ)%360;
+        minsAheadOfTZ=tz==""?0:(lngEastOfTZ>=180?lngEastOfTZ-360:lngEastOfTZ)/15*60;
+
+        totalOffsetOfNoonMin=minsAheadOfTZ+equationOfTime;
+        totalOffsetOfNoonDay=totalOffsetOfNoonMin/1440;
+        totalOffsetOfNoonMS=totalOffsetOfNoonDay*86400000;
+        noon=now.setHours(12,0,0,0);
+        localNoonOnDay=new Date(noon-totalOffsetOfNoonMS);
+
+        sunLatRad=sunLat*Math.PI/180;
+        
+        function timeInDayByAngle(elevAng){
+            elevAngRad=elevAng*Math.PI/180;
+            elevAngOffsetFromNoon=(Math.sin(elevAngRad)-Math.sin(latRad)*Math.sin(sunLatRad))/(Math.cos(latRad)*Math.cos(sunLatRad));
+            elevAngTimeOffsetFromNoonDay=elevAngOffsetFromNoon>1?undefined:elevAngOffsetFromNoon<-1?undefined:Math.acos(elevAngOffsetFromNoon)/(2*Math.PI);
+            elevAngTimeOffsetFromNoonMS=elevAngOffsetFromNoon>1?undefined:elevAngOffsetFromNoon<-1?undefined:elevAngTimeOffsetFromNoonDay*86400000;
+            elevAngTimeInDayFirst=elevAngOffsetFromNoon>1?undefined:elevAngOffsetFromNoon<-1?undefined:new Date(localNoonOnDay-elevAngTimeOffsetFromNoonMS);
+            elevAngTimeInDaySecond=elevAngOffsetFromNoon>1?undefined:elevAngOffsetFromNoon<-1?undefined:new Date(localNoonOnDay-(-elevAngTimeOffsetFromNoonMS));
+            return [elevAngTimeInDayFirst,elevAngTimeInDaySecond];
+        }
+
+        sunriseSunset=timeInDayByAngle(-51/60);
+        cTwilights=timeInDayByAngle(-6);
+        nTwilights=timeInDayByAngle(-12);
+        aTwilights=timeInDayByAngle(-18);
+
+        productOfTans=Math.tan(latRad)*Math.tan(sunLatRad);
+        astronomicalDayLengthDay=1/2+Math.asin(productOfTans>1?1:productOfTans<-1?-1:productOfTans)/Math.PI;
+
+        timeAnglePrototype=!sunriseSunset[0]?undefined:Math.asin(Math.sin(-latRad)*Math.sin(-sunLatRad)+Math.cos(-latRad)*Math.cos(-sunLatRad)*(Math.sin(-51/60*Math.PI/180)-Math.sin(latRad)*Math.sin(sunLatRad))/(Math.cos(latRad)*Math.cos(sunLatRad)));
+        directionSunset=timeAnglePrototype?Math.acos((Math.sin(timeAnglePrototype)*Math.sin(-latRad)-Math.sin(-sunLatRad))/(Math.cos(timeAnglePrototype)*Math.cos(-latRad)))*180/Math.PI:undefined;
+        directionSunrise=timeAnglePrototype?180-directionSunset:undefined;
+
+        return{
+            天文曙光:aTwilights[0]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            航海曙光:nTwilights[0]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            可视曙光:cTwilights[0]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            日出:sunriseSunset[0]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            日出方位:timeAnglePrototype?(directionSunrise==180?"南":directionSunrise>90?"东南":directionSunrise==90?"东":directionSunrise>0?"东北":"北")+parseInt(directionSunrise)+'°'+new Date(directionSunrise*3600000).toISOString().substr(14,5).replace(":","'")+"\"":'',
+            正午:localNoonOnDay?.toLocaleTimeString(undefined,{hour12:false})??'',
+            日落:sunriseSunset[1]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            日落方位:timeAnglePrototype?(directionSunset==180?"北":directionSunset>90?"西北":directionSunset==90?"西":directionSunset>0?"西南":"南")+parseInt(180+directionSunset)+'°'+new Date((180+directionSunset)*3600000).toISOString().substr(14,5).replace(":","'")+"\"":'',
+            昼长:sunriseSunset[1]&&sunriseSunset[0]?
+              new Date((sunriseSunset[1]-sunriseSunset[0])%86400000)
+                .toLocaleTimeString('zh-cn',{hour:"numeric",minute:"2-digit",second:"2-digit",timeZone:"UTC"})
+              :astronomicalDayLengthDay>0||astronomicalDayLengthDay==1?"24:00:00":"0:00:00",
+            可视暮光:cTwilights[1]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            航海暮光:nTwilights[1]?.toLocaleTimeString(undefined,{hour12:false})??'',
+            天文暮光:aTwilights[1]?.toLocaleTimeString(undefined,{hour12:false})??''
+        }
+    }
+</script>
+<script>
+  function updateTable(){
+    lng=lngElement.firstElementChild?.tagName.toLowerCase()==='input'?lngElement.firstElementChild.value:lngElement.innerHTML;
+    lat=latElement.firstElementChild?.tagName.toLowerCase()==='input'?latElement.firstElementChild.value:latElement.innerHTML;
+    tz=tzElement.firstElementChild?.tagName.toLowerCase()==='input'?tzElement.firstElementChild.value:tzElement.innerHTML;
+
+    h=0;
+    degInLng=lng.indexOf("°");
+    minInLng=lng.indexOf("'");
+    secInLng=lng.indexOf("\"");
+    negativeInLng=lng.indexOf("-");
+    isDegMinSecLng=degInLng>-1||minInLng>-1||secInLng>-1;
+    degValLng=parseFloat(lng);
+    degMinSecLng=((degInLng>-1?Math.abs(parseFloat(lng.substr(0,degInLng))):0)+(minInLng>-1?Math.abs(parseFloat(lng.substr(degInLng>-1?degInLng+1:0,degInLng>-1?minInLng-degInLng-1:minInLng)))/60:0)+(secInLng>-1?Math.abs(parseFloat(lng.substr(minInLng>-1?minInLng+1:degInLng>-1?degInLng+1:0,minInLng>-1?secInLng-minInLng-1:degInLng>-1?secInLng-degInLng-1:secInLng)))/3600:0));
+    lngVal=h>=-6378000?isDegMinSecLng?(negativeInLng>-1?negativeInLng==0?-1:0:1)*degMinSecLng:degValLng:negativeInLng>-1?negativeInLng==0?(isDegMinSecLng?-degMinSecLng:degValLng)+180:0:(isDegMinSecLng?degMinSecLng:degValLng)-180;
+    
+    hTZ=parseFloat(tz);
+    negativeInTZ=tz.indexOf("-");
+    timeSeparatorPos1=tz.indexOf(":");
+    timeSeparatorPos2=tz.indexOf(":",timeSeparatorPos1+1);
+    hVal=Math.abs(parseFloat(tz.substr(0,timeSeparatorPos1)));
+    minVal=Math.abs(parseFloat(timeSeparatorPos2>-1?tz.substr(timeSeparatorPos1+1,timeSeparatorPos2-timeSeparatorPos1-1):tz.substr(timeSeparatorPos1+1)))/60;
+    secVal=timeSeparatorPos2>-1?Math.abs(parseFloat(tz.substr(timeSeparatorPos2+1)))/3600:0;
+    hMinSec=hVal+minVal+secVal;
+    let location;
+    staticTZ=((location=locations[locList.selectedIndex])==undefined||location.tz)?timeSeparatorPos1>-1?(negativeInTZ>-1?negativeInTZ==0?-1:0:1)*hMinSec:hTZ:undefined;
+
+    degInLat=lat.indexOf("°");
+    minInLat=lat.indexOf("'");
+    secInLat=lat.indexOf("\"");
+    negativeInLat=lat.indexOf("-");
+    isDegMinSecLat=degInLat>-1||minInLat>-1||secInLat>-1;
+    negativeMultiplier=negativeInLat>-1?negativeInLat==0?-1:0:1;
+    degLat=degInLat>-1?Math.abs(parseFloat(lat.substr(0,degInLat))):0;
+    minLat=minInLat>-1?Math.abs(parseFloat(lat.substr(degInLat>-1?degInLat+1:0,degInLat>-1?minInLat-degInLat-1:minInLat)))/60:0;
+    secLat=secInLat>-1?Math.abs(parseFloat(lat.substr(minInLat>-1?minInLat+1:degInLat>-1?degInLat+1:0,minInLat>-1?secInLat-minInLat-1:degInLat>-1?secInLat-degInLat-1:secInLat)))/3600:0;
+    degValLat=parseFloat(lat);
+    degMinSecLat=degLat+minLat+secLat;
+    latValOriginal=isDegMinSecLat?negativeMultiplier*degMinSecLat:degValLat;
+    latVal=h>=-6378000?-latValOriginal:latValOriginal;
+    
+    latRad=latVal*Math.PI/180;
+
+    year=now.getFullYear();
+    start=new Date(year,0);
+    day=new Date(new Date(now).setMonth(0,1));
+    table=document.getElementById('tableMain');
+    table.innerHTML='';
+    tableHead=document.getElementById('tableHead');
+    names=Array.from(tableHead.children,name=>name.innerHTML);
+    while(day.getFullYear()===year){
+        dayInYear=(day-start)/86400000;
+        dayAfterSpringEquinox=2*Math.PI*(dayInYear+1-81)/364;
+        equationOfTime=9.87*Math.sin(2*dayAfterSpringEquinox)-7.53*Math.cos(dayAfterSpringEquinox)-1.5*Math.sin(dayAfterSpringEquinox);
+        dayAfterSpringEquinoxAccurate=2*Math.PI*(dayInYear+1-79.6764-0.2422*(year-1985)+parseInt((year-1985)/4))/365.2422;
+        sunLat=-(0.3723+23.2567*Math.sin(dayAfterSpringEquinoxAccurate)+0.1149*Math.sin(2*dayAfterSpringEquinoxAccurate)-0.1712*Math.sin(3*dayAfterSpringEquinoxAccurate)-0.758*Math.cos(dayAfterSpringEquinoxAccurate)+0.3656*Math.cos(2*dayAfterSpringEquinoxAccurate)+0.0201*Math.cos(3*dayAfterSpringEquinoxAccurate));
+        sunTimes=sunlights(equationOfTime,sunLat,staticTZ??tzOfDay(day));
+
+        row=document.createElement('tr');
+
+        if(new Date(day).setHours(0,0,0,0)===new Date(now).setHours(0,0,0,0)){
+            row.classList.add('today');
+        }
+
+        row.innerHTML=`    <td class="tCell">${day.toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</td>
+    <td class="tCell">${sunTimes[names[1]]}</td>
+    <td class="tCell">${sunTimes[names[2]]}</td>
+    <td class="tCell">${sunTimes[names[3]]}</td>
+    <td class="tCell"><b>${sunTimes[names[4]]}</b></td>
+    <td class="tCell">${sunTimes[names[5]]}</td>
+    <td class="tCell">${sunTimes[names[6]]}</td>
+    <td class="tCell"><b>${sunTimes[names[7]]}</b></td>
+    <td class="tCell">${sunTimes[names[8]]}</td>
+    <td class="tCell" style="color:blue">${sunTimes[names[9]]}</td>
+    <td class="tCell">${sunTimes[names[10]]}</td>
+    <td class="tCell">${sunTimes[names[11]]}</td>
+    <td class="tCell">${sunTimes[names[12]]}</td>`
+        table.appendChild(row);
+
+        day.setDate(day.getDate()+1);
+    }
+  }
+</script>
+<script>
+    updateTable();
+    setTimeout(function(){
+      scrollTo({top:document.getElementsByClassName('today')[0].offsetTop-window.innerHeight/2.0,behavior:'smooth'})
+    },1)
+</script>

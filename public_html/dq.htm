@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.102/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.102/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body style="margin:0px">
+  <div id="cesiumContainer" style="height:100vh"></div>
+  <script>
+    // Your access token can be found at: https://ion.cesium.com/tokens.
+    // Replace `your_access_token` with your Cesium ion access token.
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5M2U4ZGM4NC0wOGMzLTQzMGYtYjIxZC01NTZhMThjNDExOWYiLCJpZCI6MTIzNjc1LCJpYXQiOjE2NzU3NTI1MzB9.RsRJOslABrhm7wBlZ4iRCACu2qLL3DiWQ7ZRqIFMTNQ';
+
+    // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      //terrainProvider: Cesium.createWorldTerrain()
+    });    
+    // Add Cesium OSM Buildings, a global 3D buildings layer.
+    //const buildingTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
+    // Fly the camera to San Francisco at the given longitude, latitude, and height.
+    /*viewer.camera.flyTo({
+      destination : Cesium.Cartesian3.fromDegrees(110.3, 20, 40000),
+      orientation : {
+        heading : Cesium.Math.toRadians(0.0),
+        pitch : Cesium.Math.toRadians(-90.0),
+      }
+    });*/
+    viewer.camera.setView({
+        destination : Cesium.Cartesian3.fromDegrees(
+            104,
+            33,
+            Cesium.Ellipsoid.WGS84.cartesianToCartographic(viewer.camera.position).height
+        )
+    });
+  </script>
+ </div>
+</body>
+</html>

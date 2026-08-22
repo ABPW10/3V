@@ -1,0 +1,104 @@
+<!--# security-console-weather-poc
+
+POC for the weather application of the Sentry Security Console. For internal use of DEKA Research and Development only.-->
+<title>Weather</title>
+<link rel="stylesheet" href="frontend/assets/css/DayWeatherSS.css" />
+<link rel="stylesheet" href="frontend/assets/css/TodayWeatherSS.css" />
+<script src="https://unpkg.com/vue@2"></script>
+<script src="frontend/components/DayWeatherContent.vue.js"></script>
+<script src="frontend/components/HourWeatherContent.vue.js"></script>
+<script src="frontend/components/Icon.vue.js"></script>
+<script src="frontend/components/TodayWeatherContent.vue.js"></script>
+<script src="frontend/pages/weather/index.vue.js"></script>
+<script src="api/src/routes/weather.ts.js"></script>
+<script>
+getInfo=async (req)=>{
+  if(req.startsWith('/weather/weather')){
+    const query=req.substr(req.indexOf('?')+1)
+    const queries=query.split('&')
+    queryObj={}
+    for(queryArg of queries){
+      const paramName=queryArg.substr(0,queryArg.indexOf('='))
+      const paramVal=queryArg.substr(queryArg.indexOf('=')+1)
+      queryObj[paramName]=paramVal
+    }
+    weather=await getWeather({query:queryObj})
+    return weather
+  }
+}
+async function getWeather(req){
+  let city = req?.query?.city?.toString();
+  let state = req?.query?.state?.toString();
+  let zip = req?.query?.zip?.toString();
+
+  if(city == undefined ||
+    state == undefined || 
+    zip == undefined)
+  {
+    console.error('Query is undefined');
+    return;
+  }
+  try{
+    const location = await fetchLocationData(
+      city,
+      state,
+      zip
+    );
+
+    if (!location) { return; }
+       
+    let lat = location.lat;
+    let long = location.lon;
+
+    const weatherPromise = await fetchWeatherData(lat, long);
+
+    const weather = await weatherPromise;
+
+    const aq = (await(await fetch(`https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${lat}&longitude=${long}&API_KEY=BDBB6504-CD1A-4715-82C1-47C6B46544BA`)).json())
+                .sort((originalNumber, otherNumber) => otherNumber.AQI - originalNumber.AQI)
+    let air
+    if (aq.length > 0) {
+      let aqi = aq[0].AQI
+      let aqiDescription = aq[0].Category.Name
+      let maxPollutant = []
+      for (let aqElement of aq) {
+        if (aqElement.AQI === aqi) {
+          maxPollutant.push(aqElement.ParameterName)
+        } else {
+          break
+        }
+      }
+      if (!aq.some(element => element.ParameterName === 'PM2.5')) {
+        const pm25 = await(await fetch(`https://airnowgovapi.com/reportingarea/getinterpolatedPM25?reportingArea=${aq[0].ReportingArea}&stateCode=${aq[0].StateCode}`)).json()
+        if (pm25.interpolatedAqi_PM25 > aqi) {
+          aqi = pm25.interpolatedAqi_PM25
+          aqiDescription = pm25.interpolatedAqiCategory_PM25
+          maxPollutant = ['PM2.5']
+        } else if (pm25.interpolatedAqi_PM25 == aqi) {
+          maxPollutant.push('PM2.5')
+        }
+      }
+      air = { aqi, aqiDescription, maxPollutant }
+    }
+    
+    return {data:weather,air};
+  } catch (err) {
+    console.error(err);
+  };
+}
+</script>
+<script>
+const LocalStorageKey='SIWeather'
+DayWeatherContentVue=Vue.component('DayWeatherContent',DayWeatherContentProto);
+HourWeatherContentVue=Vue.component('HourWeatherContent',HourWeatherContentProto);
+IconVue=Vue.component('Icon',IconProto);
+TodayWeatherContentVue=Vue.component('TodayWeatherContent',TodayWeatherContentProto);
+IndexPageVue=Vue.component('IndexPageVue',IndexPageProto);
+IndexPageComponent=Vue.extend(IndexPageVue);
+indexPageInstance=new IndexPageComponent();
+indexPageInstance.$axios = { get: getInfo }
+indexPageInstance.$mount();
+indexPageContents=indexPageInstance.$el;
+setTimeout(()=>{document.body=indexPageContents},1)
+document.head.insertAdjacentHTML('beforeend',styleIndex)
+</script>
